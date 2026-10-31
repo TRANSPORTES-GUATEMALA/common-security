@@ -1,40 +1,34 @@
 # Common Security
 
-Biblioteca compartida de seguridad para los servicios Servlet de Transportes. Produce un artefacto Maven `jar`; **no** expone puerto HTTP y **no** se ejecuta con `spring-boot:run`.
+Biblioteca compartida de autenticación, autorización y filtros HTTP para servicios backend. Genera un artefacto Maven; no expone puerto ni ejecuta servidor.
 
 ## Entorno
 
-- Java 21 · Spring Boot BOM 4.0.8 · Maven 3.6.3+.
-- Proyecto Maven en la raíz del repositorio.
-- Artefacto: `com.transportes:common-security:1.0-SNAPSHOT`.
-- No requiere base de datos, `.env`, Eureka, Kafka ni Redis para compilar la biblioteca.
+- Java 21, Spring Boot **4.0.8** (dependencias), Maven.
+- Artefacto Maven: `com.transportes:common-security:1.0-SNAPSHOT`.
+- No requiere `.env`, MySQL, Eureka, Redis, Kafka ni puerto HTTP.
+- El proyecto Maven reside en la raíz del repositorio (`pom.xml`, `src/`).
 
-## Compilar e instalar localmente
-
-Desde la raíz Git (`common-security/`):
+## Compilar e instalar
 
 ```bash
-java -version
-mvn clean verify
-mvn install
-```
-
-Esto instala el JAR en `~/.m2/repository/com/transportes/common-security/1.0-SNAPSHOT/` para consumidores como Fleet, Commerce y Notification. Si `mvn` no está disponible en macOS, instalar Maven (`brew install maven`) o configurar uno ya instalado.
-
-## Verificación
-
-Confirmar `BUILD SUCCESS` y comprobar que el consumidor resuelva el artefacto local. `BUILD SUCCESS` de esta biblioteca no demuestra autenticación/roles correctos en un microservicio: requieren pruebas de consumidores, tokens y permisos por separado.
-
-## Comandos de desarrollo con logs
-
-Desde la raiz del repositorio:
-
-```bash
-bash dev.sh install
 bash dev.sh build
 bash dev.sh test
-bash dev.sh check
-bash dev.sh clean
+bash dev.sh install
 ```
 
-Es una libreria: no se ejecuta con `spring-boot:run`. El log de cada comando se guarda en `output/<accion>.txt` y se reemplaza al volver a ejecutarlo.
+Alternativa directa:
+
+```bash
+mvn clean install
+```
+
+La instalación coloca el JAR en el repositorio Maven local (`~/.m2/repository/com/transportes/common-security/`).
+
+## Verificar
+
+```bash
+bash dev.sh check
+```
+
+Los logs de ejecución se guardan en `output/`. Los servicios consumidores resuelven esta dependencia mediante Maven.
