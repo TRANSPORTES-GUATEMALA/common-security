@@ -1,8 +1,0 @@
-com\transportes\common_security\config\SecurityConfig.class
-com\transportes\common_security\config\PublicRoutesProperties.class
-com\transportes\common_security\decorators\RequireRole.class
-com\transportes\common_security\exceptions\InvalidUserException.class
-com\transportes\common_security\config\CommonSecurityAutoConfiguration.class
-com\transportes\common_security\config\HeaderAuthInterceptor.class
-com\transportes\common_security\decorators\RoleAspect.class
-com\transportes\common_security\config\WebConfig.class
