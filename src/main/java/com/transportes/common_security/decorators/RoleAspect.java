@@ -1,55 +1,71 @@
 package com.transportes.common_security.decorators;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
-
-import com.transportes.common_security.exceptions.InvalidUserException;
-
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import com.transportes.common_security.exceptions.SecurityAuthorizationException;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Aspect
 @Component
 public class RoleAspect {
 
+    private static final String AUTH_TYPE_ATTRIBUTE = "authType";
+    private static final String USER_ID_ATTRIBUTE = "userId";
+    private static final String ROLES_ATTRIBUTE = "roles";
+
     @Around("@annotation(requireRole)")
     public Object checkRole(ProceedingJoinPoint joinPoint, RequireRole requireRole) throws Throwable {
-
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
-                .getRequestAttributes())
-                .getRequest();
-
-        Object rolesObj = request.getAttribute("roles");
-
-        if (rolesObj == null) {
-            throw new InvalidUserException("User unauthorized");
+        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
+            throw unauthenticated();
         }
 
-        List<String> userRoles;
-
-        if (rolesObj instanceof List<?>) {
-            userRoles = ((List<?>) rolesObj).stream()
-                    .map(String::valueOf)
-                    .toList();
-        } else {
-            userRoles = Arrays.asList(rolesObj.toString().split(","));
+        HttpServletRequest request = attributes.getRequest();
+        Object authType = request.getAttribute(AUTH_TYPE_ATTRIBUTE);
+        if ("SERVICE".equals(authType)) {
+            throw forbidden();
+        }
+        if (!"USER".equals(authType)) {
+            throw unauthenticated();
         }
 
-        List<String> requiredRoles = Arrays.asList(requireRole.value());
-
-        boolean hasRole = userRoles.stream().anyMatch(requiredRoles::contains);
-
-        if (!hasRole) {
-            throw new InvalidUserException("Access denied");
+        Object userId = request.getAttribute(USER_ID_ATTRIBUTE);
+        if (!(userId instanceof Long id) || id <= 0) {
+            throw unauthenticated();
         }
 
-        return joinPoint.proceed();
+        Object rolesAttribute = request.getAttribute(ROLES_ATTRIBUTE);
+        if (!(rolesAttribute instanceof List<?> roleClaims)) {
+            throw forbidden();
+        }
+        List<String> userRoles = new ArrayList<>(roleClaims.size());
+        for (Object role : roleClaims) {
+            if (!(role instanceof String text) || text.isBlank()) {
+                throw forbidden();
+            }
+            userRoles.add(text);
+        }
+
+        for (String requiredRole : requireRole.value()) {
+            if (userRoles.contains(requiredRole)) {
+                return joinPoint.proceed();
+            }
+        }
+        throw forbidden();
+    }
+
+    private SecurityAuthorizationException unauthenticated() {
+        return SecurityAuthorizationException.unauthenticated();
+    }
+
+    private SecurityAuthorizationException forbidden() {
+        return SecurityAuthorizationException.forbidden();
     }
 }
